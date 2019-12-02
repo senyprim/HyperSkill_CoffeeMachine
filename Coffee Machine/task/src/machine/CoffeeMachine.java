@@ -6,92 +6,160 @@ import java.util.TreeMap;
 public class CoffeeMachine {
 
     enum EdIzm{
-        gram("grams"),
-        ml("ml");
+        GRAMS("grams"),
+        ML("ml"),
+        CUP("disposable cups");
+
         private String str;
         EdIzm(String str){this.str=str;}
         public String getEdIzm(){return str;}
     }
 
     enum Ingreedients {
-        WATER(200,EdIzm.ml,"water"),
-        MILK(50,EdIzm.ml,"milk"),
-        BEANS(15,EdIzm.gram,"coffee beans");
+        WATER(EdIzm.ML,"water"),
+        MILK(EdIzm.ML,"milk"),
+        BEANS(EdIzm.GRAMS,"coffee beans"),
+        CUPS(EdIzm.CUP,"coffee");
 
-        private int countOfOne;
         private EdIzm edIzm;
         private String name;
 
-        Ingreedients(int countOfOne, EdIzm edIzm, String name){
-            this.countOfOne = countOfOne;
+        Ingreedients( EdIzm edIzm, String name){
             this.edIzm=edIzm;
             this.name=name;
         }
 
-        public int getCountOfOne(){return countOfOne;}
+        public String getName(){return edIzm!=EdIzm.CUP?name:edIzm.getEdIzm();}
+
         public String getInputString(){
-            return String.format("Write how many %s of %s the coffee machine has: ",edIzm.getEdIzm(),name);
+            return String.format("Write how many %s of %s do you want to add:",edIzm.getEdIzm(),name);
         }
-        public int getCountCup(int countAll){return countAll/countOfOne;}
+    }
+
+    enum Coffes{
+        ESPRESSO(250,0,16,4,1),
+        LATTE(350,75,20,7,1),
+        CAPPUCCINO(200,100,12,6,1);
+        private int water=0;
+        private int milk=0;
+        private int beans=0;
+        private int cost=0;
+        private int cup=0;
+        Coffes(int water,int milk,int beans,int cost,int cup){
+            this.water=water;
+            this.milk=milk;
+            this.beans=beans;
+            this.cost=cost;
+            this.cup=cup;
+        }
+        public int getWater(){return water;}
+        public int getMilk(){return milk;}
+        public int getBeans(){return beans;}
+        public int getCost(){return cost;}
+        public int getCup(){return cup;}
+        public int getIngreedient(String ingreedientName){
+            if (ingreedientName.equals(Ingreedients.WATER.name())) return water;
+            else if (ingreedientName.equals(Ingreedients.MILK.name())) return milk;
+            else if (ingreedientName.equals(Ingreedients.BEANS.name())) return beans;
+            else if (ingreedientName.equals(Ingreedients.CUPS.name())) return cup;
+            else throw  new IllegalArgumentException("Неверный ингридиент");
+        }
     }
 
     Scanner scanner;
+
+
 
     CoffeeMachine(Scanner scanner){
         this.scanner=scanner;
     }
 
     private Map<Ingreedients,Integer> ingreedientMap=new TreeMap<>();
-    public void AddIngreedient(Ingreedients ingreedient, int count){
-        ingreedientMap.put(ingreedient,count);
-    }
     public int getIngreedientCount(Ingreedients ingreedient){
-        return ingreedientMap.get(ingreedient);
+        return this.ingreedientMap.getOrDefault(ingreedient,0);
+    }
+    public void addIngreedient(Ingreedients ingreedient, int count){
+        this.ingreedientMap.put(ingreedient,this.ingreedientMap.getOrDefault(ingreedient,0)+count);
+    }
+    public void substrIngreedient(Ingreedients ingreedient, int count){
+        ingreedientMap.put(ingreedient,ingreedientMap.getOrDefault(ingreedient,0)-count);
     }
     public void inputIngreedients(){
         for (Ingreedients ingreedient:Ingreedients.values())
         {
             System.out.println(ingreedient.getInputString());
-            AddIngreedient(ingreedient,Integer.parseInt(scanner.nextLine()));
+            addIngreedient(ingreedient,Integer.parseInt(scanner.nextLine()));
         }
     }
 
-    private int needCupCount=0;
-    public int getNeedCountCup(){return needCupCount;}
-    public void setNeedCupCount(int needCupCount){this.needCupCount=needCupCount;}
-    public void inputNeedCupCount(){
-        System.out.println("Write how many cups of coffee you will need: ");
-        setNeedCupCount(Integer.parseInt(scanner.nextLine()));
-    }
+    private int money=0;
+    public int getMoney(){return money;}
 
-    public int getAvailableCountCup(){
-        int min=Integer.MAX_VALUE;
-        for (Ingreedients ingreedient:ingreedientMap.keySet())
-        {
-            int count=getIngreedientCount(ingreedient)/ingreedient.getCountOfOne();
-            if (count<min){
-                min=count;
+    public boolean canBuy(Coffes coffes){
+        for(Ingreedients ingreedient:ingreedientMap.keySet()){
+            if (coffes.getIngreedient(ingreedient.name())>getIngreedientCount(ingreedient)){
+                return false;
             }
         }
-        return min;
+        return true;
     }
-    public String getResult(){
-        int availableCountCup= getAvailableCountCup();
-        if (availableCountCup== getNeedCountCup()){
-            return "Yes, I can make that amount of coffee";
+    public void buyCoffes(Coffes coffe){
+        if (!canBuy(coffe)) return;
+        for(Ingreedients ingreedient:ingreedientMap.keySet()){
+            substrIngreedient(ingreedient,coffe.getIngreedient(ingreedient.name()));
         }
-        else if (availableCountCup>getNeedCountCup()){
-            return String.format("Yes, I can make that amount of coffee (and even %d more than that)",availableCountCup-getNeedCountCup());
-        }
-        else{
-            return String.format("No, I can make only %d cup(s) of coffee",availableCountCup);
-        }
+        money+=coffe.cost;
     }
+    public void buy(){
+        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: ");
+        buyCoffes(Coffes.values()[Integer.parseInt(scanner.nextLine())-1]);
+    }
+    public void fill(){
+        inputIngreedients();
+    }
+    public void take(){
+        System.out.println(String.format("I gave you $%d",getMoney()));
+        money=0;
+    }
+
+    public void action(){
+        System.out.println(this.toString());
+        System.out.println("Write action (buy, fill, take): ");
+        String command=scanner.nextLine();
+        if (command.equals("buy")){
+            buy();
+        }
+        else if (command.equals("fill")){
+            fill();
+        }
+        else if(command.equals(("take"))){
+            take();
+        }
+        System.out.println();
+        System.out.println(this.toString());
+    }
+    @Override
+    public String toString(){
+        String str="The coffee machine has:"+"\n";
+        for(Ingreedients ingreedient:ingreedientMap.keySet()){
+            str+=String.format("%d of %s\n",getIngreedientCount(ingreedient),ingreedient.getName());
+        }
+        str+=String.format("%d of money\n",getMoney());
+        return  str;
+    }
+
+    {
+        money=550;
+        addIngreedient(Ingreedients.WATER,1200);
+        addIngreedient(Ingreedients.MILK,540);
+        addIngreedient(Ingreedients.BEANS,120);
+        addIngreedient(Ingreedients.CUPS,9);
+
+    }
+
 
     public static void main(String[] args) {
         CoffeeMachine machine=new CoffeeMachine(new Scanner(System.in));
-        machine.inputIngreedients();
-        machine.inputNeedCupCount();
-        System.out.println(machine.getResult());
+        machine.action();
     }
 }
