@@ -98,6 +98,7 @@ public class CoffeeMachine {
     public boolean canBuy(Coffes coffes){
         for(Ingreedients ingreedient:ingreedientMap.keySet()){
             if (coffes.getIngreedient(ingreedient.name())>getIngreedientCount(ingreedient)){
+                System.out.println(String.format("Sorry, not enough %s!", ingreedient.name));
                 return false;
             }
         }
@@ -105,14 +106,17 @@ public class CoffeeMachine {
     }
     public void buyCoffes(Coffes coffe){
         if (!canBuy(coffe)) return;
+        System.out.println("I have enough resources, making you a coffee!");
         for(Ingreedients ingreedient:ingreedientMap.keySet()){
             substrIngreedient(ingreedient,coffe.getIngreedient(ingreedient.name()));
         }
         money+=coffe.cost;
     }
     public void buy(){
-        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino: ");
-        buyCoffes(Coffes.values()[Integer.parseInt(scanner.nextLine())-1]);
+        System.out.println("What do you want to buy? 1 - espresso, 2 - latte, 3 - cappuccino, back - to main menu:");
+        String input=scanner.nextLine();
+        if (input.equals("back")) {return;}
+        buyCoffes(Coffes.values()[Integer.parseInt(input)-1]);
     }
     public void fill(){
         inputIngreedients();
@@ -123,20 +127,25 @@ public class CoffeeMachine {
     }
 
     public void action(){
-        System.out.println(this.toString());
-        System.out.println("Write action (buy, fill, take): ");
-        String command=scanner.nextLine();
-        if (command.equals("buy")){
-            buy();
+        while(true) {
+            System.out.println("Write action (buy, fill, take, remaining, exit): ");
+            String command = scanner.nextLine();
+            System.out.println();
+            if (command.equals("buy")) {
+                buy();
+            } else if (command.equals("fill")) {
+                fill();
+            } else if (command.equals(("take"))) {
+                take();
+            }
+            else if (command.equals("remaining")) {
+                System.out.println(this.toString());
+            }
+            else if (command.equals("exit")) {
+                return;
+            }
+            System.out.println();
         }
-        else if (command.equals("fill")){
-            fill();
-        }
-        else if(command.equals(("take"))){
-            take();
-        }
-        System.out.println();
-        System.out.println(this.toString());
     }
     @Override
     public String toString(){
@@ -144,17 +153,16 @@ public class CoffeeMachine {
         for(Ingreedients ingreedient:ingreedientMap.keySet()){
             str+=String.format("%d of %s\n",getIngreedientCount(ingreedient),ingreedient.getName());
         }
-        str+=String.format("%d of money\n",getMoney());
+        str+=String.format("$%d of money",getMoney());
         return  str;
     }
 
     {
         money=550;
-        addIngreedient(Ingreedients.WATER,1200);
+        addIngreedient(Ingreedients.WATER,400);
         addIngreedient(Ingreedients.MILK,540);
         addIngreedient(Ingreedients.BEANS,120);
         addIngreedient(Ingreedients.CUPS,9);
-
     }
 
 
